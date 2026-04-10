@@ -1,0 +1,10 @@
+acme:
+  envio:
+    url: https://endpoint-produccion-real.com
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      sendOrder:
+        failureRateThreshold: 50
+        waitDurationInOpenState: 20s      # Más conservador en producción

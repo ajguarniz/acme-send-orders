@@ -1,0 +1,42 @@
+spring:
+  application:
+    name: acme-send-orders
+  profiles:
+    active: dev                    # Cambia a "prod" en producción
+
+# ====================== Resilience4j - Retry + Circuit Breaker ======================
+resilience4j:
+  retry:
+    instances:
+      sendOrderRetry:
+        maxAttempts: 3                    # Máximo 3 intentos
+        waitDuration: 1s                  # Espera 1 segundo entre reintentos
+        retryExceptions:
+          - org.springframework.web.reactive.function.client.WebClientResponseException
+          - java.io.IOException
+          - reactor.netty.http.client.PrematureCloseException
+
+  circuitbreaker:
+    instances:
+      sendOrder:                          # Nombre del Circuit Breaker (usado en OrderService)
+        registerHealthIndicator: true       # Expone estado en /actuator/health
+        slidingWindowSize: 10               # Ventana de las últimas 10 llamadas
+        failureRateThreshold: 50            # Se abre si falla el 50% o más
+        waitDurationInOpenState: 15s        # Tiempo en estado OPEN antes de probar de nuevo
+        permittedNumberOfCallsInHalfOpenState: 3   # Llamadas de prueba cuando está Half-Open
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        eventConsumerBufferSize: 10
+        recordExceptions:
+          - org.springframework.web.reactive.function.client.WebClientResponseException
+          - java.io.IOException
+          - java.util.concurrent.TimeoutException
+          - reactor.netty.http.client.PrematureCloseException
+        ignoreExceptions:
+          - java.lang.IllegalArgumentException
+
+# ====================== Logging ======================
+logging:
+  level:
+    com.acme: INFO
+    org.springframework.web: WARN
+    io.github.resilience4j: DEBUG        # Útil para ver eventos del Circuit Breaker
